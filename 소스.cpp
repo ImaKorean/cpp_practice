@@ -8,6 +8,7 @@
 #define BufferWidth 80	// 가로 버퍼 크기
 #define BufferHeight 40 // 세로 버퍼 크기
 #define EnemiesCount 10
+#define HealthCount 4
 #pragma endregion
 #pragma region DoubleBuffer
 //버퍼 초기화
@@ -56,10 +57,6 @@ enum Menu_ID {
 	QUIT
 };
 
-enum ENEMIES_MOVE {
-	ACT,
-	GOING,
-};
 
 #pragma endregion
 #pragma region Game
@@ -82,6 +79,12 @@ void StageRelease();
 
 SCENE_ID id;
 Menu_ID menuId;
+
+int time = 0;
+int maxSpawnTime = 50;
+int sleeptime = 0;
+int spawn = 0;
+int j = 0;
 
 #pragma endregion
 #pragma region structs
@@ -108,6 +111,16 @@ struct Enemies
 
 Enemies* enemies[EnemiesCount] = {};
 
+struct Health
+{
+	int x;
+	int y;
+	Color color;
+	const char* shape;
+};
+
+Health* enemies[HealthCount] = {};
+
 #pragma endregion
 
 
@@ -116,12 +129,13 @@ int main() {
 	int cherryColor=0;
 	int hide = 0;
 	int framecount=0;
+	sleeptime = 100;
 	LogoInit();
 	MenuInit();
 	InitBuffer();
-
 	while (true)
 	{
+
 		switch (id)
 		{
 		case LOGO:
@@ -153,8 +167,8 @@ int main() {
 		FlipBuffer();
 		ClearBuffer();
 
-		Sleep(50);
-
+		
+		Sleep(sleeptime);
 	}
 
 	CloseBuffer();
@@ -492,20 +506,34 @@ void StageProgress()
 void StageRender()
 {
 	WriteBuffer(heros->x, heros->y, heros->shape, heros->color);
-	int j = rand() % 9 + 1;
-	enemies[j]->state = ACT;
+	if (time == 0) {
+		j = rand() % 10;
+		enemies[j]->state = 1;
+	}
 	for (int i = 0; i < EnemiesCount; i++) {
-		if (enemies[i]->state = ACT) {
-			enemies[i]->state = GOING;
+		if (enemies[i]->state == 1) {
 			WriteBuffer(enemies[i]->x, enemies[i]->y, enemies[i]->shape, enemies[i]->color);
-		}
-		else if (enemies[i]->state = GOING) {
-			if (enemies[i]->y == 39) {
-				enemies[i]->y = 1;
+			enemies[i]->y++;
+			if (enemies[i]->y == 38) {
+				enemies[i]->y = 0;
+				enemies[i]->state = 0;
+				enemies[rand() % 10]->state = 1;
 			}
-			else enemies[i]->y++;
+		}
+
+		if ((enemies[i]->x == heros->x) && (enemies[i]->y == heros -> y)) {
+			exit(true);
+		}
+
+		time++;
+		if (time == maxSpawnTime) {
+			time = 0;
+			if (sleeptime > 15) {
+				sleeptime--;
+			}
 		}
 	}
+
 }
 
 void StageRelease()
